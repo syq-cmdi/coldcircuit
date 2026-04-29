@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760">
+  <defs>
+    <linearGradient id="panel" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#f0f7ff"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#1b4772" flood-opacity="0.14"/></filter>
+  </defs>
+  <rect width="1400" height="760" fill="#f6faff"/>
+  <text x="60" y="72" font-family="Inter, Arial" font-size="42" font-weight="850" fill="#10263f">1500W Hybrid Cold Plate · 3D Optimization Result</text>
+  <text x="62" y="108" font-family="Inter, Arial" font-size="20" fill="#64748b">Manifold microchannels + embedded high-conductivity spreading + local pin-fin enhancement</text>
+
+  <rect x="60" y="145" width="790" height="545" rx="28" fill="url(#panel)" stroke="#dce8f7" filter="url(#shadow)"/>
+  <g transform="translate(140 235)">
+    <polygon points="80,300 480,190 680,295 270,425" fill="#c7e7ff" stroke="#64aee1" stroke-width="3" opacity=".76"/>
+    <polygon points="80,250 480,140 680,245 270,375" fill="#e1f4ff" stroke="#8dcaf0" stroke-width="3" opacity=".72"/>
+    <polygon points="80,200 480,90 680,195 270,325" fill="#fef0d2" stroke="#f1b94d" stroke-width="3" opacity=".78"/>
+    <polygon points="80,155 480,45 680,150 270,280" fill="#fff8ea" stroke="#f7d98a" stroke-width="3" opacity=".72"/>
+    <polygon points="258,138 475,82 585,140 360,205" fill="#ff7043" stroke="#cc4528" stroke-width="2" opacity=".42"/>
+    <g opacity=".85">
+      <path d="M130 168 C240 112, 345 116, 455 122 S600 138, 650 148" fill="none" stroke="#0077c8" stroke-width="5"/>
+      <path d="M130 198 C250 155, 365 160, 465 165 S600 175, 650 184" fill="none" stroke="#00a6df" stroke-width="4"/>
+      <path d="M130 228 C250 195, 365 205, 465 207 S600 218, 650 226" fill="none" stroke="#69d2ff" stroke-width="4"/>
+    </g>
+    <g fill="#245b86" opacity=".85">
+      <rect x="350" y="125" width="8" height="72" rx="4"/><rect x="370" y="120" width="8" height="78" rx="4"/><rect x="390" y="116" width="8" height="84" rx="4"/><rect x="410" y="114" width="8" height="88" rx="4"/><rect x="430" y="115" width="8" height="86" rx="4"/><rect x="450" y="120" width="8" height="78" rx="4"/>
+    </g>
+    <circle cx="110" cy="158" r="17" fill="#0b88d1"/><circle cx="660" cy="148" r="17" fill="#13aa87"/>
+    <text x="75" y="130" font-family="Inter, Arial" font-size="18" fill="#0b4f83" font-weight="800">IN</text>
+    <text x="672" y="126" font-family="Inter, Arial" font-size="18" fill="#0c735c" font-weight="800">OUT</text>
+    <text x="286" y="126" font-family="Inter, Arial" font-size="17" fill="#99331f" font-weight="850">1500W AI accelerator zone</text>
+  </g>
+
+  <rect x="890" y="145" width="450" height="545" rx="28" fill="#ffffff" stroke="#dce8f7" filter="url(#shadow)"/>
+  <text x="930" y="200" font-family="Inter, Arial" font-size="28" font-weight="850" fill="#10263f">Optimized Candidate</text>
+  <g font-family="Inter, Arial">
+    <rect x="930" y="230" width="170" height="86" rx="18" fill="#eef8ff"/><text x="950" y="263" font-size="14" fill="#60758f" font-weight="800">WIDTH</text><text x="950" y="298" font-size="30" fill="#10263f" font-weight="850">1.2 mm</text>
+    <rect x="1130" y="230" width="170" height="86" rx="18" fill="#eef8ff"/><text x="1150" y="263" font-size="14" fill="#60758f" font-weight="800">DEPTH</text><text x="1150" y="298" font-size="30" fill="#10263f" font-weight="850">2.5 mm</text>
+    <rect x="930" y="342" width="170" height="86" rx="18" fill="#f2fff9"/><text x="950" y="375" font-size="14" fill="#60758f" font-weight="800">FLOW</text><text x="950" y="410" font-size="30" fill="#10263f" font-weight="850">8 L/min</text>
+    <rect x="1130" y="342" width="170" height="86" rx="18" fill="#f2fff9"/><text x="1150" y="375" font-size="14" fill="#60758f" font-weight="800">CHANNELS</text><text x="1150" y="410" font-size="30" fill="#10263f" font-weight="850">80</text>
+    <rect x="930" y="468" width="370" height="70" rx="18" fill="#fff7ed"/><text x="955" y="512" font-size="25" fill="#8a4b00" font-weight="850">Max Temp ≈ 63.8 °C</text>
+    <rect x="930" y="558" width="370" height="70" rx="18" fill="#eef7ff"/><text x="955" y="602" font-size="25" fill="#064a7a" font-weight="850">ΔP ≈ 0.42 bar</text>
+  </g>
+</svg>
