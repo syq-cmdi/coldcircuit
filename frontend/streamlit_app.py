@@ -4,7 +4,6 @@ from copy import deepcopy
 
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -18,7 +17,16 @@ from three_viewer import render_three_coldplate
 
 st.set_page_config(page_title="ColdCircuit CAD Studio", page_icon="❄️", layout="wide", initial_sidebar_state="collapsed")
 
-STRUCTURE_OPTIONS = ["serpentine", "parallel_microchannel", "manifold_microchannel", "pin_fin", "impingement", "embedded", "hybrid"]
+STRUCTURE_OPTIONS = [
+    "drawing_based_redesign",
+    "serpentine",
+    "parallel_microchannel",
+    "manifold_microchannel",
+    "pin_fin",
+    "impingement",
+    "embedded",
+    "hybrid",
+]
 OPTIMIZATION_OPTIONS = ["grid_search", "rule_based", "pareto_screening", "surrogate_preview"]
 VIEW_MODES = ["Iso", "Front", "Back", "Left", "Right", "Top"]
 
@@ -54,6 +62,7 @@ st.markdown(
     .pill {display:inline-block; margin:2px 4px 2px 0; padding:4px 8px; border-radius:999px; background:#10243a; color:#7dd3fc; border:1px solid #1f4e79; font-size:11px; font-weight:700;}
     .orange-pill {display:inline-block; margin:2px 4px 2px 0; padding:4px 8px; border-radius:999px; background:#2b1608; color:#fdba74; border:1px solid #9a3412; font-size:11px; font-weight:700;}
     .viewer-note {background:#08111f;border:1px solid #1f4e79;border-radius:10px;padding:8px 10px;color:#a7c7e8;font-size:12px;margin:8px 0;}
+    .drawing-note {background:#1f1607;border:1px solid #a16207;border-radius:10px;padding:8px 10px;color:#fde68a;font-size:12px;margin:8px 0;}
     .stButton>button {background:#0b72c9; color:#fff; border:1px solid #38bdf8; border-radius:8px; font-weight:800; height:34px;}
     .stSelectbox label,.stSlider label,.stRadio label,.stCheckbox label {color:#c7d8ee!important; font-size:12px!important; font-weight:700!important;}
     .stDataFrame {border:1px solid #1f2937; border-radius:10px; overflow:hidden;}
@@ -65,6 +74,37 @@ st.markdown(
 
 
 def get_base_plate(structure_family: str) -> tuple[ColdPlate, object | None]:
+    if structure_family == "drawing_based_redesign":
+        plate = make_tdp1500_reference_design()
+        plate.name = "uploaded_STEP_jet_pinfin_redesign"
+        plate.base_size_mm = (135.0, 70.0)
+        plate.thickness_mm = 14.0
+        plate.manufacturing_process = "vacuum_brazed"
+        plate.design_notes = (
+            "Redesigned from uploaded STEP stack: inlet/outlet plate, impingement jet plate, "
+            "silicone gasket, and 1.3 mm-class pin-fin base. The dashboard version intentionally "
+            "uses dual inlets, split/collect manifolds, denser central pin-fin islands, and a revised jet array."
+        )
+        plate.inlet_outlet.inlet_xy_mm = (8.0, 35.0)
+        plate.inlet_outlet.outlet_xy_mm = (127.0, 35.0)
+        plate.inlet_outlet.port_diameter_mm = 8.0
+        plate.inlet_outlet.flow_rate_lpm = 4.2
+        plate.inlet_outlet.max_pressure_drop_bar = 0.85
+        ch = plate.channels[0]
+        ch.width_mm = 1.3
+        ch.depth_mm = 3.0
+        if hasattr(ch, "channel_count"):
+            ch.channel_count = 54
+        if hasattr(ch, "length_mm"):
+            ch.length_mm = 105.0
+        if hasattr(ch, "pitch_mm"):
+            ch.pitch_mm = 2.25
+        plate.heat_sources[0].name = "GaN / AI power module"
+        plate.heat_sources[0].center_xy_mm = (67.5, 35.0)
+        plate.heat_sources[0].size_mm = (42.0, 32.0)
+        plate.heat_sources[0].power_w = 850.0
+        plate.heat_sources[0].max_temperature_c = 85.0
+        return ColdPlate.model_validate(plate.model_dump()), None
     if structure_family in {"hybrid", "embedded", "manifold_microchannel", "pin_fin", "impingement", "parallel_microchannel"}:
         plate = make_tdp1500_reference_design()
         plate.name = f"{structure_family}_tdp1500_reference"
@@ -90,7 +130,7 @@ def design_code_snippet(plate: ColdPlate, structure_family: str, optimization_me
     return f"""// ColdCircuit parametric design brief
 system: coldcircuit
 renderer: three.js / OrbitControls
-mission: 1500W AI accelerator cold plate
+mission: drawing-based redesigned liquid cold plate
 structure: {structure_family}
 optimizer: {optimization_method}
 
@@ -102,18 +142,19 @@ ColdPlate({{
   channel_width: {ch.width_mm:.2f} mm,
   channel_depth: {ch.depth_mm:.2f} mm,
   channel_count: {getattr(ch, 'channel_count', 1)},
-  target: max_temp < 75 C, dp < 1.2 bar
+  layer_stack: inlet/outlet + jet + silicone + pin-fin,
+  target: max_temp < 85 C, dp < 0.85 bar
 }})
 """
 
 
 def run_optimization(base_plate: ColdPlate, method: str, coolant_inlet_c: float):
     if method == "rule_based":
-        grid = {"channel.width_mm": [1.0, 1.2, 1.5], "channel.depth_mm": [1.5, 2.0, 2.5], "inlet_outlet.flow_rate_lpm": [5.0, 8.0, 10.0]}
+        grid = {"channel.width_mm": [1.0, 1.3, 1.6], "channel.depth_mm": [2.0, 2.5, 3.0], "inlet_outlet.flow_rate_lpm": [3.0, 4.2, 6.0]}
     else:
-        grid = {"channel.width_mm": [0.8, 1.0, 1.2, 1.5, 2.0], "channel.depth_mm": [1.0, 1.5, 2.0, 2.5, 3.0], "inlet_outlet.flow_rate_lpm": [3.0, 5.0, 8.0, 10.0, 12.0]}
+        grid = {"channel.width_mm": [0.9, 1.1, 1.3, 1.6, 2.0], "channel.depth_mm": [1.5, 2.0, 2.5, 3.0, 3.5], "inlet_outlet.flow_rate_lpm": [2.5, 3.5, 4.2, 5.0, 6.0, 8.0]}
         if hasattr(base_plate.primary_channel(), "pitch_mm"):
-            grid["channel.pitch_mm"] = [1.5, 2.0, 2.5, 3.0, 4.0]
+            grid["channel.pitch_mm"] = [1.8, 2.25, 2.6, 3.0]
     return optimize_grid(base_plate, grid, coolant_inlet_c=coolant_inlet_c, top_k=12)
 
 
@@ -128,27 +169,27 @@ left, center, right = st.columns([0.28, 0.48, 0.24], gap="small")
 
 with left:
     st.markdown('<div class="panel"><div class="panel-title">PARAMETRIC DESIGN INPUT <span class="status-pass">LIVE</span></div><div class="panel-body">', unsafe_allow_html=True)
-    st.markdown('<div class="mission"><h3>Design Mission</h3><p>Generate and optimize a high-TDP embedded liquid cold plate for AI accelerator cooling. Sliders update the Three.js WebGL geometry in the center viewport.</p></div>', unsafe_allow_html=True)
-    structure_family = st.selectbox("Cold plate structure", STRUCTURE_OPTIONS, index=6)
+    st.markdown('<div class="mission"><h3>Drawing-based Redesign</h3><p>Reference stack from uploaded STEP: inlet/outlet plate, jet plate, silicone plate, and 1.3 mm pin-fin plate. The dashboard shows a substantially modified multi-layer jet + pin-fin cooling concept.</p></div>', unsafe_allow_html=True)
+    structure_family = st.selectbox("Cold plate structure", STRUCTURE_OPTIONS, index=0)
     optimization_method = st.selectbox("Optimization method", OPTIMIZATION_OPTIONS, index=0)
     base_plate, stack = get_base_plate(structure_family)
     ch0 = base_plate.primary_channel()
     coolant_inlet_c = st.slider("Coolant inlet temperature", 10.0, 50.0, 25.0, 1.0)
     flow_lpm = st.slider("Flow rate", 0.5, 18.0, float(base_plate.inlet_outlet.flow_rate_lpm), 0.1)
-    width_mm = st.slider("Channel width", 0.4, 4.0, float(ch0.width_mm), 0.05)
-    depth_mm = st.slider("Channel depth", 0.4, min(6.0, float(base_plate.thickness_mm) - 0.3), float(ch0.depth_mm), 0.05)
-    pitch_mm = st.slider("Channel pitch", 0.8, 8.0, float(getattr(ch0, "pitch_mm", 2.0)), 0.05) if hasattr(ch0, "pitch_mm") else None
+    width_mm = st.slider("Channel / jet equivalent width", 0.4, 4.0, float(ch0.width_mm), 0.05)
+    depth_mm = st.slider("Channel / cavity depth", 0.4, min(6.0, float(base_plate.thickness_mm) - 0.3), float(ch0.depth_mm), 0.05)
+    pitch_mm = st.slider("Jet / pin-fin pitch", 0.8, 8.0, float(getattr(ch0, "pitch_mm", 2.0)), 0.05) if hasattr(ch0, "pitch_mm") else None
     heat_scale = st.slider("TDP multiplier", 0.3, 1.5, 1.0, 0.05)
     plate = apply_overrides(base_plate, flow_lpm, width_mm, depth_mm, pitch_mm, heat_scale)
     result = plate.simulate_1d(coolant_inlet_c=coolant_inlet_c)
     st.markdown(f'<div class="code-window">{design_code_snippet(plate, structure_family, optimization_method)}</div>', unsafe_allow_html=True)
-    run_btn = st.button("Run 3D Optimization", type="primary", use_container_width=True)
+    run_btn = st.button("Run Drawing-based Optimization", type="primary", use_container_width=True)
     if run_btn:
         st.session_state["opt_result"] = run_optimization(base_plate, optimization_method, coolant_inlet_c)
     st.markdown('</div></div>', unsafe_allow_html=True)
 
 st.markdown(
-    f'<div class="topbar"><div class="top-left"><span class="brand">❄ ColdCircuit CAD Studio</span><span class="filetab">{plate.name}.json</span><span class="toolbar-btn">Three.js</span><span class="toolbar-btn">OrbitControls</span><span class="toolbar-btn">Export STEP</span></div><div class="top-right">{status_badge(result)}<span class="toolbar-btn">Publish</span></div></div>',
+    f'<div class="topbar"><div class="top-left"><span class="brand">❄ ColdCircuit CAD Studio</span><span class="filetab">{plate.name}.json</span><span class="toolbar-btn">Three.js</span><span class="toolbar-btn">OrbitControls</span><span class="toolbar-btn">Drawing Redesign</span></div><div class="top-right">{status_badge(result)}<span class="toolbar-btn">Publish</span></div></div>',
     unsafe_allow_html=True,
 )
 
@@ -163,14 +204,16 @@ with center:
     ]:
         col.markdown(f'<div class="metric-card"><div class="metric-label">{label}</div><div class="metric-value">{value}</div></div>', unsafe_allow_html=True)
     t1, t2, t3 = st.columns(3)
-    t1.markdown('<div class="target-card"><b>Thermal Target</b><span>Keep accelerator source below 75°C while preserving coolant ΔT margin.</span></div>', unsafe_allow_html=True)
-    t2.markdown('<div class="target-card"><b>Hydraulic Target</b><span>Keep pressure drop below 1.2 bar for pump compatibility.</span></div>', unsafe_allow_html=True)
-    t3.markdown('<div class="target-card"><b>Manufacturing Target</b><span>Maintain roof/web thickness and avoid fragile microfeatures.</span></div>', unsafe_allow_html=True)
+    t1.markdown('<div class="target-card"><b>Thermal Target</b><span>Use impingement jets and pin-fin islands to suppress central GaN/AI hotspot.</span></div>', unsafe_allow_html=True)
+    t2.markdown('<div class="target-card"><b>Hydraulic Target</b><span>Dual inlet/outlet redesign reduces local jet maldistribution and pressure penalty.</span></div>', unsafe_allow_html=True)
+    t3.markdown('<div class="target-card"><b>Manufacturing Target</b><span>Preserve gasket sealing surface while increasing pin-fin density and jet coverage.</span></div>', unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
     show_streamlines = c1.checkbox("Show coolant streamlines", value=True)
     show_heat = c2.checkbox("Show heat source / thermal halo", value=True)
-    show_exploded = c3.checkbox("Exploded layer view", value=False)
+    show_exploded = c3.checkbox("Exploded layer view", value=True if structure_family == "drawing_based_redesign" else False)
     st.markdown('<div class="viewer-note">This center viewport is rendered by Three.js WebGL with OrbitControls. It is not a static SVG or Plotly fallback.</div>', unsafe_allow_html=True)
+    if structure_family == "drawing_based_redesign":
+        st.markdown('<div class="drawing-note">Uploaded drawing abstraction: inlet/outlet plate + jet plate + silicone gasket + 1.3 mm pin-fin plate. Dashboard model is intentionally redesigned, not a direct copy.</div>', unsafe_allow_html=True)
     render_three_coldplate(
         plate_name=plate.name,
         width_mm=plate.base_size_mm[0],
@@ -201,11 +244,16 @@ with right:
     st.radio("Camera", VIEW_MODES, key="view_mode", horizontal=True)
     st.markdown('<div class="note">Camera presets update the Three.js viewport. You can still drag directly in the center to orbit, zoom, and pan.</div>', unsafe_allow_html=True)
     st.divider()
-    st.markdown('<div class="panel-title">ARCHITECTURE EXPLANATION</div>', unsafe_allow_html=True)
-    st.markdown(f'<span class="pill">{structure_family}</span><span class="orange-pill">{optimization_method}</span>', unsafe_allow_html=True)
-    rules = all_rules_grouped().get(structure_family, [])
-    for rule in rules[:4]:
-        st.markdown(f"- **{rule['item']}**: {rule['rule']}")
+    st.markdown('<div class="panel-title">DRAWING-BASED MODIFICATION</div>', unsafe_allow_html=True)
+    if structure_family == "drawing_based_redesign":
+        st.markdown('- **Original stack reference**: 出入口板 / 射流板 / 硅胶板 / 针肋1.3mm板')
+        st.markdown('- **Major redesign**: single-path layout changed to dual inlet/outlet split-flow architecture')
+        st.markdown('- **Enhanced cooling**: central jet array + dense pin-fin island below hotspot')
+        st.markdown('- **Sealing concept**: gasket layer preserved but active cooling footprint expanded')
+    else:
+        rules = all_rules_grouped().get(structure_family, [])
+        for rule in rules[:4]:
+            st.markdown(f"- **{rule['item']}**: {rule['rule']}")
     st.divider()
     g = tdp1500_guidance()
     st.markdown('<div class="panel-title">1500W STRATEGY</div>', unsafe_allow_html=True)
