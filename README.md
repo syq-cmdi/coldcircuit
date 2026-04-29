@@ -13,17 +13,23 @@ ColdCircuit is designed for workflows where a human engineer or an LLM generates
 
 ## Visual Preview
 
-### Interactive Frontend Studio
+### Dark Interactive Dashboard
 
-![ColdCircuit Studio preview](docs/assets/frontend_studio_preview.svg)
+<p align="center">
+  <img src="docs/assets/designer_dashboard_dark.svg" width="96%" alt="ColdCircuit dark dashboard" />
+</p>
+
+### Designer Fluid Streamlines
+
+<p align="center">
+  <img src="docs/assets/designer_fluid_streamlines_v2.svg" width="96%" alt="Designer fluid streamlines" />
+</p>
 
 ### 1500W Hybrid 3D Optimization Result
 
-![1500W 3D optimization result](docs/assets/tdp1500_3d_optimization.svg)
-
-### Conceptual Fluid Streamlines
-
-![Fluid streamlines](docs/assets/fluid_streamlines.svg)
+<p align="center">
+  <img src="docs/assets/designer_3d_optimization_v2.svg" width="96%" alt="1500W hybrid cold plate optimization" />
+</p>
 
 ---
 
@@ -106,6 +112,9 @@ ColdCircuit combines four layers:
   - rules
   - tdp1500
 - Interactive frontend:
+  - dark three-panel dashboard
+  - structure selector
+  - optimization method selector
   - parameter sliders
   - 3D layered cold-plate view
   - conceptual fluid streamlines
@@ -158,17 +167,28 @@ pip install -e ".[all]"
 streamlit run frontend/streamlit_app.py
 ```
 
-The front-end supports:
+The upgraded dashboard uses a **dark three-panel interactive layout**:
 
-- loading the built-in 1500W reference design;
-- loading example JSON designs;
-- uploading a custom ColdCircuit JSON;
-- interactively changing flow rate, channel width, channel depth, and pitch;
-- visualizing the 3D layer stack;
-- viewing conceptual fluid streamlines;
-- viewing a generated thermal map;
-- running a bounded optimization preview;
-- browsing structure-grouped embedded cooling rules.
+- **Left panel**: structure selection, optimization method selection, sliders, and action buttons.
+- **Center panel**: synchronized 3D rendering, streamline visualization, thermal map, and optimization results.
+- **Right panel**: engineering explanation, grouped design rules, 1500W guidance, and manufacturability checks.
+
+The dashboard supports switching among:
+
+- `serpentine`
+- `parallel_microchannel`
+- `manifold_microchannel`
+- `pin_fin`
+- `impingement`
+- `embedded`
+- `hybrid`
+
+and optimization modes:
+
+- `grid_search`
+- `rule_based`
+- `pareto_screening`
+- `surrogate_preview`
 
 ---
 
