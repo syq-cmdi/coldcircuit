@@ -1,0 +1,14 @@
+{
+  "name": "serpentine_250w_demo",
+  "base_size_mm": [100.0, 80.0],
+  "thickness_mm": 8.0,
+  "material": {"name": "Aluminum 6061-T6", "conductivity_w_mk": 167.0, "density_kg_m3": 2700.0, "specific_heat_j_kgk": 896.0, "yield_strength_mpa": 276.0},
+  "fluid": {"name": "Water", "density_kg_m3": 997.0, "viscosity_pa_s": 0.00089, "conductivity_w_mk": 0.6, "specific_heat_j_kgk": 4182.0, "freezing_point_c": 0.0},
+  "inlet_outlet": {"inlet_xy_mm": [8.0, 8.0], "outlet_xy_mm": [92.0, 72.0], "port_diameter_mm": 6.0, "flow_rate_lpm": 1.5, "max_pressure_drop_bar": 0.5},
+  "channels": [{"type": "serpentine", "width_mm": 2.0, "depth_mm": 1.5, "surface_roughness_um": 1.6, "pass_count": 8, "pitch_mm": 6.0, "margin_mm": 8.0, "bend_loss_k": 0.8}],
+  "fins": null,
+  "manifolds": [{"type": "manifold", "strategy": "single_in_single_out", "width_mm": 6.0, "depth_mm": 2.0}],
+  "heat_sources": [{"name": "250W chip", "center_xy_mm": [50.0, 40.0], "size_mm": [25.0, 25.0], "power_w": 250.0, "max_temperature_c": 55.0, "thermal_interface_resistance_m2k_w": 0.00001}],
+  "manufacturing_process": "cnc_brazed",
+  "design_notes": "Baseline serpentine architecture for demonstration."
+}
