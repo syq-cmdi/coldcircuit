@@ -1,0 +1,14 @@
+{
+  "name": "tdp1500_hybrid_manifold_microchannel_reference",
+  "base_size_mm": [180.0, 120.0],
+  "thickness_mm": 10.0,
+  "material": {"name": "Copper C110", "conductivity_w_mk": 385.0, "density_kg_m3": 8960.0, "specific_heat_j_kgk": 385.0, "yield_strength_mpa": 210.0},
+  "fluid": {"name": "Water", "density_kg_m3": 997.0, "viscosity_pa_s": 0.00089, "conductivity_w_mk": 0.6, "specific_heat_j_kgk": 4182.0, "freezing_point_c": 0.0},
+  "inlet_outlet": {"inlet_xy_mm": [10.0, 60.0], "outlet_xy_mm": [170.0, 60.0], "port_diameter_mm": 12.0, "flow_rate_lpm": 8.0, "max_pressure_drop_bar": 1.2},
+  "channels": [{"type": "parallel_microchannel_bank", "width_mm": 1.0, "depth_mm": 2.5, "surface_roughness_um": 1.6, "channel_count": 80, "length_mm": 120.0, "pitch_mm": 2.0, "entrance_loss_k": 0.6, "exit_loss_k": 0.6}],
+  "fins": {"type": "pin_fin_array", "shape": "cylindrical", "pitch_mm": 2.5, "diameter_or_width_mm": 1.0, "height_mm": 2.0, "count_x": 40, "count_y": 24},
+  "manifolds": [{"type": "manifold", "strategy": "dual_side", "width_mm": 18.0, "depth_mm": 4.0, "balancing_note": "Use dual-side manifold and short channel paths for 1500 W class designs."}],
+  "heat_sources": [{"name": "AI accelerator module", "center_xy_mm": [90.0, 60.0], "size_mm": [70.0, 70.0], "power_w": 1500.0, "max_temperature_c": 75.0, "thermal_interface_resistance_m2k_w": 0.000005}],
+  "manufacturing_process": "additive_manufactured",
+  "design_notes": "1500 W reference: copper-equivalent hybrid manifold microchannel with local pin-fin metadata. Use as screening baseline only."
+}
