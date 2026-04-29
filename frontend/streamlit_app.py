@@ -1,5 +1,4 @@
 from pathlib import Path
-import json
 import sys
 from copy import deepcopy
 
@@ -36,25 +35,32 @@ st.markdown(
     header[data-testid="stHeader"] {background:rgba(7,11,18,.92); border-bottom:1px solid #1f2937;}
     section[data-testid="stSidebar"] {display:none;}
     .block-container {padding:0.55rem 0.75rem 0.75rem 0.75rem; max-width:100%;}
-    div[data-testid="stVerticalBlock"] {gap:0.45rem;}
-    .topbar {height:38px; display:flex; align-items:center; gap:14px; padding:0 14px; background:#0b1220; border:1px solid #1f2937; border-radius:12px; box-shadow:0 10px 24px rgba(0,0,0,.18);}
+    div[data-testid="stVerticalBlock"] {gap:0.48rem;}
+    .topbar {min-height:42px; display:flex; align-items:center; justify-content:space-between; gap:14px; padding:0 14px; background:#0b1220; border:1px solid #1f2937; border-radius:12px; box-shadow:0 10px 24px rgba(0,0,0,.18);}
     .brand {font-weight:850; color:#eef6ff; letter-spacing:-.02em;}
+    .top-left,.top-right{display:flex;align-items:center;gap:10px;}
     .filetab {font-size:12px; color:#9fb3c8; background:#111827; border:1px solid #263244; padding:5px 10px; border-radius:8px;}
     .toolbar-btn {font-size:12px;color:#cfe8ff;background:#10243a;border:1px solid #1f4e79;padding:5px 9px;border-radius:8px;}
+    .status-pass {font-size:12px;color:#bbf7d0;background:#052e1b;border:1px solid #166534;padding:5px 10px;border-radius:999px;font-weight:800;}
+    .status-warn {font-size:12px;color:#fde68a;background:#422006;border:1px solid #b45309;padding:5px 10px;border-radius:999px;font-weight:800;}
     .panel {background:#0b1220; border:1px solid #1f2937; border-radius:14px; box-shadow:0 16px 30px rgba(0,0,0,.18); overflow:hidden;}
     .panel-title {display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:#0f172a; border-bottom:1px solid #1f2937; color:#dbeafe; font-weight:800; font-size:13px;}
     .panel-body {padding:12px;}
-    .code-window {background:#050914; border:1px solid #1f2937; border-radius:10px; padding:10px; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:12px; line-height:1.52; color:#d6e6ff; white-space:pre-wrap; min-height:188px;}
-    .comment {color:#6ee7b7;} .kw {color:#93c5fd;} .num {color:#fbbf24;} .str {color:#fca5a5;}
-    .check {font-size:12px; color:#bbf7d0; background:#052e1b; border:1px solid #166534; padding:3px 8px; border-radius:999px;}
+    .mission {background:linear-gradient(135deg,#08111f 0%,#10243a 55%,#0e7490 120%);border:1px solid #1f4e79;border-radius:12px;padding:12px;margin-bottom:10px;}
+    .mission h3 {margin:0 0 6px 0;font-size:18px;color:#f8fbff;}
+    .mission p {margin:0;color:#aac0d9;font-size:12px;line-height:1.45;}
+    .code-window {background:#050914; border:1px solid #1f2937; border-radius:10px; padding:10px; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:12px; line-height:1.52; color:#d6e6ff; white-space:pre-wrap; min-height:184px;}
     .metric-card {background:#0f172a; border:1px solid #263244; border-radius:12px; padding:8px 10px;}
     .metric-label {font-size:10px; color:#8ca3bd; text-transform:uppercase; font-weight:800; letter-spacing:.04em;}
     .metric-value {font-size:18px; color:#f8fbff; font-weight:850; margin-top:2px;}
+    .target-card {background:#0a1322;border:1px solid #263244;border-radius:12px;padding:10px;min-height:78px;}
+    .target-card b {color:#f8fbff;font-size:13px;}
+    .target-card span {display:block;color:#90a4bc;font-size:12px;margin-top:5px;line-height:1.35;}
     .note {font-size:12px;color:#9fb3c8;line-height:1.52;}
     .pill {display:inline-block; margin:2px 4px 2px 0; padding:4px 8px; border-radius:999px; background:#10243a; color:#7dd3fc; border:1px solid #1f4e79; font-size:11px; font-weight:700;}
-    .viewport-card {background:linear-gradient(180deg,#101827 0%, #151b24 100%); border:1px solid #263244; border-radius:14px; overflow:hidden;}
+    .orange-pill {display:inline-block; margin:2px 4px 2px 0; padding:4px 8px; border-radius:999px; background:#2b1608; color:#fdba74; border:1px solid #9a3412; font-size:11px; font-weight:700;}
     .stButton>button {background:#0b72c9; color:#fff; border:1px solid #38bdf8; border-radius:8px; font-weight:800; height:34px;}
-    .stSelectbox label, .stSlider label, .stRadio label, .stCheckbox label {color:#c7d8ee!important; font-size:12px!important; font-weight:700!important;}
+    .stSelectbox label,.stSlider label,.stRadio label,.stCheckbox label {color:#c7d8ee!important; font-size:12px!important; font-weight:700!important;}
     .stDataFrame {border:1px solid #1f2937; border-radius:10px; overflow:hidden;}
     </style>
     """,
@@ -98,33 +104,28 @@ def add_box(fig, name, x0, x1, y0, y1, z0, z1, color, opacity=0.55):
     fig.add_trace(go.Mesh3d(**mesh_box(x0, x1, y0, y1, z0, z1), name=name, color=color, opacity=opacity, flatshading=True, showscale=False, hovertemplate=f"{name}<extra></extra>"))
 
 
-def build_cad_3d(plate: ColdPlate, stack, view: str, show_streamlines: bool, show_heat: bool, show_exploded: bool):
+def build_cad_3d(plate: ColdPlate, view: str, show_streamlines: bool, show_heat: bool, show_exploded: bool):
     fig = go.Figure()
     x_len, y_len, th = plate.base_size_mm[0], plate.base_size_mm[1], plate.thickness_mm
     z_gap = 1.2 if show_exploded else 0.0
-
     add_box(fig, "base / cold plate body", 0, x_len, 0, y_len, 0, th * 0.32, "#56677f", 0.95)
     add_box(fig, "microchannel core", 7, x_len - 7, 8, y_len - 8, th * 0.32 + z_gap, th * 0.62 + z_gap, "#0f8bd1", 0.32)
     add_box(fig, "transparent cover", 0, x_len, 0, y_len, th * 0.62 + 2 * z_gap, th + 2 * z_gap, "#8ccfff", 0.24)
-
     ch = plate.primary_channel()
     n = min(max(int(getattr(ch, "channel_count", 14)), 6), 48)
     y_start, y_end = y_len * 0.18, y_len * 0.82
     for idx in range(n):
         y = y_start + (y_end - y_start) * idx / max(n - 1, 1)
         add_box(fig, "coolant microchannel" if idx == 0 else "", x_len * 0.18, x_len * 0.82, y - 0.23, y + 0.23, th * 0.40 + z_gap, th * 0.55 + z_gap, "#2bd4ff", 0.65)
-
     for src in plate.heat_sources:
         cx, cy = src.center_xy_mm
         sx, sy = src.size_mm
         if show_heat:
             add_box(fig, f"{src.name} heat source", cx - sx / 2, cx + sx / 2, cy - sy / 2, cy + sy / 2, th + 2 * z_gap + 0.15, th + 2 * z_gap + 0.75, "#ff512f", 0.82)
-            for scale, op in [(1.28, 0.18), (1.55, 0.09)]:
-                add_box(fig, "thermal halo", cx - sx * scale / 2, cx + sx * scale / 2, cy - sy * scale / 2, cy + sy * scale / 2, th + 2 * z_gap + 0.02, th + 2 * z_gap + 0.10, "#ffb347", op)
-
+            add_box(fig, "thermal influence zone", cx - sx * 0.78, cx + sx * 0.78, cy - sy * 0.78, cy + sy * 0.78, th + 2 * z_gap + 0.02, th + 2 * z_gap + 0.10, "#ffb347", 0.11)
     if show_streamlines:
-        inlet_x, inlet_y = plate.inlet_outlet.inlet_xy_mm
-        outlet_x, outlet_y = plate.inlet_outlet.outlet_xy_mm
+        inlet_y = plate.inlet_outlet.inlet_xy_mm[1]
+        outlet_y = plate.inlet_outlet.outlet_xy_mm[1]
         stream_count = min(14, n)
         for i in range(stream_count):
             y = y_start + (y_end - y_start) * i / max(stream_count - 1, 1)
@@ -138,9 +139,7 @@ def build_cad_3d(plate: ColdPlate, stack, view: str, show_streamlines: bool, sho
                 name="flow streamlines" if i == 0 else "",
                 hovertemplate="coolant streamline<extra></extra>",
             ))
-
     fig.add_trace(go.Scatter3d(x=[-x_len * 0.12, x_len * 1.12], y=[plate.inlet_outlet.inlet_xy_mm[1], plate.inlet_outlet.outlet_xy_mm[1]], z=[th * 0.52 + z_gap, th * 0.52 + z_gap], mode="markers+text", marker=dict(size=8, color=["#22d3ee", "#10b981"]), text=["IN", "OUT"], textposition="top center", name="ports"))
-
     fig.update_layout(
         height=610,
         paper_bgcolor="#161b23",
@@ -164,20 +163,21 @@ def build_cad_3d(plate: ColdPlate, stack, view: str, show_streamlines: bool, sho
 
 def design_code_snippet(plate: ColdPlate, structure_family: str, optimization_method: str) -> str:
     ch = plate.primary_channel()
-    return f"""// Industrial cold-plate parametric model
+    return f"""// ColdCircuit parametric design brief
 system: coldcircuit
+mission: 1500W AI accelerator cold plate
 structure: {structure_family}
-optimization: {optimization_method}
+optimizer: {optimization_method}
 
-const plate = ColdPlate({{
-  size: [{plate.base_size_mm[0]:.0f}, {plate.base_size_mm[1]:.0f}, {plate.thickness_mm:.1f}],
-  tdp: {sum(s.power_w for s in plate.heat_sources):.0f} W,
+ColdPlate({{
+  envelope: [{plate.base_size_mm[0]:.0f}, {plate.base_size_mm[1]:.0f}, {plate.thickness_mm:.1f}],
+  total_tdp: {sum(s.power_w for s in plate.heat_sources):.0f} W,
   coolant: \"{plate.fluid.name}\",
-  flowRate: {plate.inlet_outlet.flow_rate_lpm:.1f} L/min,
-  channelWidth: {ch.width_mm:.2f} mm,
-  channelDepth: {ch.depth_mm:.2f} mm,
-  channelCount: {getattr(ch, 'channel_count', 1)},
-  manufacturing: \"{plate.manufacturing_process}\"
+  flow_rate: {plate.inlet_outlet.flow_rate_lpm:.1f} L/min,
+  channel_width: {ch.width_mm:.2f} mm,
+  channel_depth: {ch.depth_mm:.2f} mm,
+  channel_count: {getattr(ch, 'channel_count', 1)},
+  target: max_temp < 75 C, dp < 1.2 bar
 }})
 """
 
@@ -192,18 +192,20 @@ def run_optimization(base_plate: ColdPlate, method: str, coolant_inlet_c: float)
     return optimize_grid(base_plate, grid, coolant_inlet_c=coolant_inlet_c, top_k=12)
 
 
+def status_badge(result) -> str:
+    if result.passed:
+        return '<span class="status-pass">CHECK PASSED</span>'
+    return '<span class="status-warn">NEEDS ITERATION</span>'
+
+
 if "view_mode" not in st.session_state:
     st.session_state.view_mode = "Iso"
-
-st.markdown(
-    '<div class="topbar"><span class="brand">❄ ColdCircuit CAD Studio</span><span class="filetab">2026/04/29 / tdp1500_hybrid_reference.json</span><span class="toolbar-btn">Measure</span><span class="toolbar-btn">Orbit</span><span class="toolbar-btn">Export STEP</span><span class="toolbar-btn">Publish</span></div>',
-    unsafe_allow_html=True,
-)
 
 left, center, right = st.columns([0.28, 0.48, 0.24], gap="small")
 
 with left:
-    st.markdown('<div class="panel"><div class="panel-title">PARAMETRIC CODE <span class="check">LIVE</span></div><div class="panel-body">', unsafe_allow_html=True)
+    st.markdown('<div class="panel"><div class="panel-title">PARAMETRIC DESIGN INPUT <span class="status-pass">LIVE</span></div><div class="panel-body">', unsafe_allow_html=True)
+    st.markdown('<div class="mission"><h3>Design Mission</h3><p>Generate and optimize a high-TDP embedded liquid cold plate for AI accelerator cooling. Drag sliders to update the geometry and inspect the 3D model in the main viewport.</p></div>', unsafe_allow_html=True)
     structure_family = st.selectbox("Cold plate structure", STRUCTURE_OPTIONS, index=6)
     optimization_method = st.selectbox("Optimization method", OPTIMIZATION_OPTIONS, index=0)
     base_plate, stack = get_base_plate(structure_family)
@@ -216,27 +218,37 @@ with left:
     heat_scale = st.slider("TDP multiplier", 0.3, 1.5, 1.0, 0.05)
     plate = apply_overrides(base_plate, flow_lpm, width_mm, depth_mm, pitch_mm, heat_scale)
     result = plate.simulate_1d(coolant_inlet_c=coolant_inlet_c)
-    code_html = design_code_snippet(plate, structure_family, optimization_method).replace("//", '<span class="comment">//').replace("\n", '</span>\n', 1)
-    st.markdown(f'<div class="code-window">{code_html}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="code-window">{design_code_snippet(plate, structure_family, optimization_method)}</div>', unsafe_allow_html=True)
     run_btn = st.button("Run 3D Optimization", type="primary", use_container_width=True)
     if run_btn:
         st.session_state["opt_result"] = run_optimization(base_plate, optimization_method, coolant_inlet_c)
     st.markdown('</div></div>', unsafe_allow_html=True)
 
+st.markdown(
+    f'<div class="topbar"><div class="top-left"><span class="brand">❄ ColdCircuit CAD Studio</span><span class="filetab">{plate.name}.json</span><span class="toolbar-btn">Measure</span><span class="toolbar-btn">Orbit</span><span class="toolbar-btn">Export STEP</span></div><div class="top-right">{status_badge(result)}<span class="toolbar-btn">Publish</span></div></div>',
+    unsafe_allow_html=True,
+)
+
 with center:
-    st.markdown('<div class="panel"><div class="panel-title">DRAGGABLE 3D VIEWPORT <span class="note">drag rotate · wheel zoom · shift pan</span></div><div class="panel-body">', unsafe_allow_html=True)
+    st.markdown('<div class="panel"><div class="panel-title">MAIN DASHBOARD / DRAGGABLE 3D VIEWPORT <span class="note">drag rotate · wheel zoom · shift pan</span></div><div class="panel-body">', unsafe_allow_html=True)
     m1, m2, m3, m4 = st.columns(4)
     for col, label, value in [
         (m1, "TDP", f"{result.total_power_w:.0f} W"),
         (m2, "Max Temp", f"{result.estimated_max_source_temperature_c:.1f} °C"),
-        (m3, "ΔP", f"{result.pressure_drop_bar:.3f} bar"),
+        (m3, "Pressure Drop", f"{result.pressure_drop_bar:.3f} bar"),
         (m4, "Regime", result.flow_regime),
     ]:
         col.markdown(f'<div class="metric-card"><div class="metric-label">{label}</div><div class="metric-value">{value}</div></div>', unsafe_allow_html=True)
+
+    t1, t2, t3 = st.columns(3)
+    t1.markdown('<div class="target-card"><b>Thermal Target</b><span>Keep accelerator source below 75°C while preserving coolant ΔT margin.</span></div>', unsafe_allow_html=True)
+    t2.markdown('<div class="target-card"><b>Hydraulic Target</b><span>Keep pressure drop below 1.2 bar for pump compatibility.</span></div>', unsafe_allow_html=True)
+    t3.markdown('<div class="target-card"><b>Manufacturing Target</b><span>Maintain roof/web thickness and avoid fragile microfeatures.</span></div>', unsafe_allow_html=True)
+
     show_streamlines = st.checkbox("Show coolant streamlines", value=True)
     show_heat = st.checkbox("Show heat source / thermal halo", value=True)
     show_exploded = st.checkbox("Exploded layer view", value=False)
-    fig = build_cad_3d(plate, stack, st.session_state.view_mode, show_streamlines, show_heat, show_exploded)
+    fig = build_cad_3d(plate, st.session_state.view_mode, show_streamlines, show_heat, show_exploded)
     st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True, "displaylogo": False, "modeBarButtonsToAdd": ["drawline", "eraseshape"]})
     opt = st.session_state.get("opt_result")
     if opt:
@@ -247,13 +259,14 @@ with center:
     st.markdown('</div></div>', unsafe_allow_html=True)
 
 with right:
-    st.markdown('<div class="panel"><div class="panel-title">VIEW PANEL</div><div class="panel-body">', unsafe_allow_html=True)
-    st.radio("View", list(VIEW_CAMERAS.keys()), key="view_mode", horizontal=True)
-    st.markdown('<div class="note">Camera presets change the 3D viewport. You can still drag directly in the center to orbit, zoom, and inspect the model.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="panel"><div class="panel-title">VIEW / ENGINEERING PANEL</div><div class="panel-body">', unsafe_allow_html=True)
+    st.radio("Camera", list(VIEW_CAMERAS.keys()), key="view_mode", horizontal=True)
+    st.markdown('<div class="note">Camera presets update the center viewport. Direct drag still works for orbit, zoom, and inspection.</div>', unsafe_allow_html=True)
     st.divider()
-    st.markdown('<div class="panel-title">DESIGN GUIDANCE</div>', unsafe_allow_html=True)
+    st.markdown('<div class="panel-title">ARCHITECTURE EXPLANATION</div>', unsafe_allow_html=True)
+    st.markdown(f'<span class="pill">{structure_family}</span><span class="orange-pill">{optimization_method}</span>', unsafe_allow_html=True)
     rules = all_rules_grouped().get(structure_family, [])
-    for rule in rules[:5]:
+    for rule in rules[:4]:
         st.markdown(f"- **{rule['item']}**: {rule['rule']}")
     st.divider()
     g = tdp1500_guidance()
@@ -262,7 +275,7 @@ with right:
     st.markdown("".join([f'<span class="pill">{x}</span>' for x in g.recommended_families]), unsafe_allow_html=True)
     st.divider()
     checks = plate.manufacturability_checks()
-    st.markdown('<div class="panel-title">CHECKS</div>', unsafe_allow_html=True)
+    st.markdown('<div class="panel-title">DESIGN CHECKS</div>', unsafe_allow_html=True)
     if checks:
         st.dataframe(pd.DataFrame([c.model_dump() for c in checks]), use_container_width=True, hide_index=True)
     else:
