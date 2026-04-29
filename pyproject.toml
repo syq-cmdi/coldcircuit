@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "coldcircuit"
+version = "0.2.0"
+description = "LLM-friendly liquid cold plate thermal design library"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "ColdCircuit contributors"}]
+license = {text = "MIT"}
+dependencies = [
+    "pydantic>=2.6",
+    "typer>=0.9",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+cad = [
+    "build123d>=0.8.0",
+]
+
+[project.scripts]
+coldcircuit = "coldcircuit.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
