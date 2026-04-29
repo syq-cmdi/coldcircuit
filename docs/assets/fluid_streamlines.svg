@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="720" viewBox="0 0 1400 720">
+  <defs>
+    <linearGradient id="plate" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#f8fcff"/><stop offset="1" stop-color="#e4f3ff"/></linearGradient>
+    <radialGradient id="hot" cx="50%" cy="50%" r="55%"><stop offset="0" stop-color="#ff5a3c" stop-opacity="0.82"/><stop offset="0.55" stop-color="#ffbc66" stop-opacity="0.34"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#1a4d83" flood-opacity="0.15"/></filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L8,3 z" fill="#0e8bd1"/></marker>
+  </defs>
+  <rect width="1400" height="720" fill="#f6faff"/>
+  <text x="60" y="72" font-family="Inter, Arial" font-size="42" font-weight="850" fill="#10263f">Conceptual Fluid Streamlines & Thermal Field</text>
+  <text x="62" y="108" font-family="Inter, Arial" font-size="20" fill="#64748b">Flow-distribution interpretation for hybrid manifold microchannel cold plate</text>
+  <rect x="75" y="155" width="1250" height="470" rx="32" fill="url(#plate)" stroke="#cfe3f8" stroke-width="3" filter="url(#shadow)"/>
+  <ellipse cx="700" cy="390" rx="260" ry="165" fill="url(#hot)"/>
+  <rect x="510" y="285" width="380" height="210" rx="18" fill="rgba(255,108,70,0.22)" stroke="#e85838" stroke-width="3"/>
+  <text x="568" y="386" font-family="Inter, Arial" font-size="28" fill="#9a2f1c" font-weight="850">1500W hotspot</text>
+  <g fill="none" stroke-linecap="round" marker-end="url(#arrow)">
+    <path d="M130 230 C330 120, 520 210, 700 220 S1040 210, 1260 230" stroke="#0076c8" stroke-width="7" opacity="0.85"/>
+    <path d="M130 280 C330 190, 530 260, 700 270 S1040 262, 1260 280" stroke="#0e8bd1" stroke-width="6" opacity="0.82"/>
+    <path d="M130 330 C330 270, 520 320, 700 326 S1040 324, 1260 330" stroke="#22a8e8" stroke-width="5.5" opacity="0.78"/>
+    <path d="M130 385 C330 360, 520 374, 700 382 S1040 390, 1260 385" stroke="#43c3f2" stroke-width="5" opacity="0.78"/>
+    <path d="M130 440 C330 465, 520 438, 700 436 S1040 430, 1260 440" stroke="#6fd6ff" stroke-width="4.5" opacity="0.74"/>
+    <path d="M130 495 C330 565, 520 490, 700 492 S1040 505, 1260 495" stroke="#9be6ff" stroke-width="4" opacity="0.72"/>
+  </g>
+  <circle cx="130" cy="360" r="25" fill="#0e8bd1" stroke="#ffffff" stroke-width="6"/>
+  <circle cx="1260" cy="360" r="25" fill="#14a885" stroke="#ffffff" stroke-width="6"/>
+  <text x="104" y="316" font-family="Inter, Arial" font-size="24" fill="#0f4b78" font-weight="850">IN</text>
+  <text x="1235" y="316" font-family="Inter, Arial" font-size="24" fill="#0a725a" font-weight="850">OUT</text>
+  <g font-family="Inter, Arial">
+    <rect x="75" y="650" width="280" height="42" rx="21" fill="#eaf5ff"/><text x="105" y="678" font-size="18" fill="#0b5e99" font-weight="800">Short parallel paths</text>
+    <rect x="385" y="650" width="300" height="42" rx="21" fill="#fff2df"/><text x="415" y="678" font-size="18" fill="#915500" font-weight="800">Embedded hotspot cooling</text>
+    <rect x="715" y="650" width="310" height="42" rx="21" fill="#effaf5"/><text x="745" y="678" font-size="18" fill="#0c745b" font-weight="800">Balanced dual manifold</text>
+    <rect x="1055" y="650" width="270" height="42" rx="21" fill="#f2f0ff"/><text x="1085" y="678" font-size="18" fill="#4c3aa8" font-weight="800">CFD validation needed</text>
+  </g>
+</svg>
