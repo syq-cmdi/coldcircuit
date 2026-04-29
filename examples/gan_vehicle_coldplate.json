@@ -1,0 +1,15 @@
+{
+  "name": "vehicle_gan_coldplate_demo",
+  "base_size_mm": [70.0, 45.0],
+  "thickness_mm": 6.0,
+  "material": {"name": "Aluminum 6061-T6", "conductivity_w_mk": 167.0, "density_kg_m3": 2700.0, "specific_heat_j_kgk": 896.0, "yield_strength_mpa": 276.0},
+  "fluid": {"name": "50/50 Ethylene Glycol-Water", "density_kg_m3": 1070.0, "viscosity_pa_s": 0.0034, "conductivity_w_mk": 0.37, "specific_heat_j_kgk": 3300.0, "freezing_point_c": -37.0},
+  "inlet_outlet": {"inlet_xy_mm": [5.0, 5.0], "outlet_xy_mm": [65.0, 40.0], "port_diameter_mm": 5.0, "flow_rate_lpm": 1.2, "max_pressure_drop_bar": 0.7},
+  "channels": [{"type": "serpentine", "width_mm": 1.4, "depth_mm": 1.2, "surface_roughness_um": 1.6, "pass_count": 7, "pitch_mm": 4.5, "margin_mm": 5.0, "bend_loss_k": 0.9}],
+  "heat_sources": [
+    {"name": "GaN module A", "center_xy_mm": [25.0, 22.5], "size_mm": [12.0, 10.0], "power_w": 120.0, "max_temperature_c": 85.0, "thermal_interface_resistance_m2k_w": 0.00002},
+    {"name": "GaN module B", "center_xy_mm": [45.0, 22.5], "size_mm": [12.0, 10.0], "power_w": 120.0, "max_temperature_c": 85.0, "thermal_interface_resistance_m2k_w": 0.00002}
+  ],
+  "manufacturing_process": "vacuum_brazed",
+  "design_notes": "Vehicle GaN module screening example with EGW coolant."
+}
