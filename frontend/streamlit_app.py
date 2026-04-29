@@ -14,19 +14,13 @@ from coldcircuit.design_rules import all_rules_grouped
 from coldcircuit.optimization import optimize_grid
 from coldcircuit.tdp1500 import make_tdp1500_reference_design, make_tdp1500_3d_stack, tdp1500_guidance
 from coldcircuit.plate import ColdPlate
+from three_viewer import render_three_coldplate
 
 st.set_page_config(page_title="ColdCircuit CAD Studio", page_icon="❄️", layout="wide", initial_sidebar_state="collapsed")
 
 STRUCTURE_OPTIONS = ["serpentine", "parallel_microchannel", "manifold_microchannel", "pin_fin", "impingement", "embedded", "hybrid"]
 OPTIMIZATION_OPTIONS = ["grid_search", "rule_based", "pareto_screening", "surrogate_preview"]
-VIEW_CAMERAS = {
-    "Iso": dict(eye=dict(x=1.55, y=1.45, z=0.95), center=dict(x=0, y=0, z=0), up=dict(x=0, y=0, z=1)),
-    "Front": dict(eye=dict(x=0.0, y=-2.25, z=0.35), center=dict(x=0, y=0, z=0), up=dict(x=0, y=0, z=1)),
-    "Back": dict(eye=dict(x=0.0, y=2.25, z=0.35), center=dict(x=0, y=0, z=0), up=dict(x=0, y=0, z=1)),
-    "Left": dict(eye=dict(x=-2.25, y=0.0, z=0.35), center=dict(x=0, y=0, z=0), up=dict(x=0, y=0, z=1)),
-    "Right": dict(eye=dict(x=2.25, y=0.0, z=0.35), center=dict(x=0, y=0, z=0), up=dict(x=0, y=0, z=1)),
-    "Top": dict(eye=dict(x=0.0, y=0.0, z=2.45), center=dict(x=0, y=0, z=0), up=dict(x=0, y=1, z=0)),
-}
+VIEW_MODES = ["Iso", "Front", "Back", "Left", "Right", "Top"]
 
 st.markdown(
     """
@@ -59,9 +53,11 @@ st.markdown(
     .note {font-size:12px;color:#9fb3c8;line-height:1.52;}
     .pill {display:inline-block; margin:2px 4px 2px 0; padding:4px 8px; border-radius:999px; background:#10243a; color:#7dd3fc; border:1px solid #1f4e79; font-size:11px; font-weight:700;}
     .orange-pill {display:inline-block; margin:2px 4px 2px 0; padding:4px 8px; border-radius:999px; background:#2b1608; color:#fdba74; border:1px solid #9a3412; font-size:11px; font-weight:700;}
+    .viewer-note {background:#08111f;border:1px solid #1f4e79;border-radius:10px;padding:8px 10px;color:#a7c7e8;font-size:12px;margin:8px 0;}
     .stButton>button {background:#0b72c9; color:#fff; border:1px solid #38bdf8; border-radius:8px; font-weight:800; height:34px;}
     .stSelectbox label,.stSlider label,.stRadio label,.stCheckbox label {color:#c7d8ee!important; font-size:12px!important; font-weight:700!important;}
     .stDataFrame {border:1px solid #1f2937; border-radius:10px; overflow:hidden;}
+    iframe {border-radius:12px; border:1px solid #263244;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -89,82 +85,11 @@ def apply_overrides(plate: ColdPlate, flow_lpm: float, width_mm: float, depth_mm
     return ColdPlate.model_validate(p.model_dump())
 
 
-def mesh_box(x0, x1, y0, y1, z0, z1):
-    return dict(
-        x=[x0, x1, x1, x0, x0, x1, x1, x0],
-        y=[y0, y0, y1, y1, y0, y0, y1, y1],
-        z=[z0, z0, z0, z0, z1, z1, z1, z1],
-        i=[0, 0, 0, 4, 4, 4, 0, 1, 2, 3, 0, 1],
-        j=[1, 2, 3, 5, 6, 7, 1, 2, 3, 0, 4, 5],
-        k=[2, 3, 0, 6, 7, 4, 5, 6, 7, 4, 5, 6],
-    )
-
-
-def add_box(fig, name, x0, x1, y0, y1, z0, z1, color, opacity=0.55):
-    fig.add_trace(go.Mesh3d(**mesh_box(x0, x1, y0, y1, z0, z1), name=name, color=color, opacity=opacity, flatshading=True, showscale=False, hovertemplate=f"{name}<extra></extra>"))
-
-
-def build_cad_3d(plate: ColdPlate, view: str, show_streamlines: bool, show_heat: bool, show_exploded: bool):
-    fig = go.Figure()
-    x_len, y_len, th = plate.base_size_mm[0], plate.base_size_mm[1], plate.thickness_mm
-    z_gap = 1.2 if show_exploded else 0.0
-    add_box(fig, "base / cold plate body", 0, x_len, 0, y_len, 0, th * 0.32, "#56677f", 0.95)
-    add_box(fig, "microchannel core", 7, x_len - 7, 8, y_len - 8, th * 0.32 + z_gap, th * 0.62 + z_gap, "#0f8bd1", 0.32)
-    add_box(fig, "transparent cover", 0, x_len, 0, y_len, th * 0.62 + 2 * z_gap, th + 2 * z_gap, "#8ccfff", 0.24)
-    ch = plate.primary_channel()
-    n = min(max(int(getattr(ch, "channel_count", 14)), 6), 48)
-    y_start, y_end = y_len * 0.18, y_len * 0.82
-    for idx in range(n):
-        y = y_start + (y_end - y_start) * idx / max(n - 1, 1)
-        add_box(fig, "coolant microchannel" if idx == 0 else "", x_len * 0.18, x_len * 0.82, y - 0.23, y + 0.23, th * 0.40 + z_gap, th * 0.55 + z_gap, "#2bd4ff", 0.65)
-    for src in plate.heat_sources:
-        cx, cy = src.center_xy_mm
-        sx, sy = src.size_mm
-        if show_heat:
-            add_box(fig, f"{src.name} heat source", cx - sx / 2, cx + sx / 2, cy - sy / 2, cy + sy / 2, th + 2 * z_gap + 0.15, th + 2 * z_gap + 0.75, "#ff512f", 0.82)
-            add_box(fig, "thermal influence zone", cx - sx * 0.78, cx + sx * 0.78, cy - sy * 0.78, cy + sy * 0.78, th + 2 * z_gap + 0.02, th + 2 * z_gap + 0.10, "#ffb347", 0.11)
-    if show_streamlines:
-        inlet_y = plate.inlet_outlet.inlet_xy_mm[1]
-        outlet_y = plate.inlet_outlet.outlet_xy_mm[1]
-        stream_count = min(14, n)
-        for i in range(stream_count):
-            y = y_start + (y_end - y_start) * i / max(stream_count - 1, 1)
-            fig.add_trace(go.Scatter3d(
-                x=[-x_len * 0.12, x_len * 0.06, x_len * 0.18, x_len * 0.50, x_len * 0.82, x_len * 0.94, x_len * 1.12],
-                y=[inlet_y, inlet_y, y, y, y, outlet_y, outlet_y],
-                z=[th * 0.52 + z_gap] * 7,
-                mode="lines",
-                line=dict(width=5 if i in {0, stream_count - 1} else 3, color="#29c7ff"),
-                opacity=0.82,
-                name="flow streamlines" if i == 0 else "",
-                hovertemplate="coolant streamline<extra></extra>",
-            ))
-    fig.add_trace(go.Scatter3d(x=[-x_len * 0.12, x_len * 1.12], y=[plate.inlet_outlet.inlet_xy_mm[1], plate.inlet_outlet.outlet_xy_mm[1]], z=[th * 0.52 + z_gap, th * 0.52 + z_gap], mode="markers+text", marker=dict(size=8, color=["#22d3ee", "#10b981"]), text=["IN", "OUT"], textposition="top center", name="ports"))
-    fig.update_layout(
-        height=610,
-        paper_bgcolor="#161b23",
-        plot_bgcolor="#161b23",
-        font=dict(color="#dbeafe"),
-        margin=dict(l=0, r=0, t=8, b=0),
-        scene=dict(
-            bgcolor="#161b23",
-            xaxis=dict(title="X", backgroundcolor="#161b23", gridcolor="#263244", zerolinecolor="#334155", color="#91a4bd"),
-            yaxis=dict(title="Y", backgroundcolor="#161b23", gridcolor="#263244", zerolinecolor="#334155", color="#91a4bd"),
-            zaxis=dict(title="Z", backgroundcolor="#161b23", gridcolor="#263244", zerolinecolor="#334155", color="#91a4bd"),
-            aspectmode="data",
-            camera=VIEW_CAMERAS.get(view, VIEW_CAMERAS["Iso"]),
-            dragmode="orbit",
-        ),
-        legend=dict(orientation="h", y=-0.08, x=0.02, font=dict(size=10)),
-        uirevision="coldcircuit-cad-studio",
-    )
-    return fig
-
-
 def design_code_snippet(plate: ColdPlate, structure_family: str, optimization_method: str) -> str:
     ch = plate.primary_channel()
     return f"""// ColdCircuit parametric design brief
 system: coldcircuit
+renderer: three.js / OrbitControls
 mission: 1500W AI accelerator cold plate
 structure: {structure_family}
 optimizer: {optimization_method}
@@ -193,9 +118,7 @@ def run_optimization(base_plate: ColdPlate, method: str, coolant_inlet_c: float)
 
 
 def status_badge(result) -> str:
-    if result.passed:
-        return '<span class="status-pass">CHECK PASSED</span>'
-    return '<span class="status-warn">NEEDS ITERATION</span>'
+    return '<span class="status-pass">CHECK PASSED</span>' if result.passed else '<span class="status-warn">NEEDS ITERATION</span>'
 
 
 if "view_mode" not in st.session_state:
@@ -205,7 +128,7 @@ left, center, right = st.columns([0.28, 0.48, 0.24], gap="small")
 
 with left:
     st.markdown('<div class="panel"><div class="panel-title">PARAMETRIC DESIGN INPUT <span class="status-pass">LIVE</span></div><div class="panel-body">', unsafe_allow_html=True)
-    st.markdown('<div class="mission"><h3>Design Mission</h3><p>Generate and optimize a high-TDP embedded liquid cold plate for AI accelerator cooling. Drag sliders to update the geometry and inspect the 3D model in the main viewport.</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="mission"><h3>Design Mission</h3><p>Generate and optimize a high-TDP embedded liquid cold plate for AI accelerator cooling. Sliders update the Three.js WebGL geometry in the center viewport.</p></div>', unsafe_allow_html=True)
     structure_family = st.selectbox("Cold plate structure", STRUCTURE_OPTIONS, index=6)
     optimization_method = st.selectbox("Optimization method", OPTIMIZATION_OPTIONS, index=0)
     base_plate, stack = get_base_plate(structure_family)
@@ -225,12 +148,12 @@ with left:
     st.markdown('</div></div>', unsafe_allow_html=True)
 
 st.markdown(
-    f'<div class="topbar"><div class="top-left"><span class="brand">❄ ColdCircuit CAD Studio</span><span class="filetab">{plate.name}.json</span><span class="toolbar-btn">Measure</span><span class="toolbar-btn">Orbit</span><span class="toolbar-btn">Export STEP</span></div><div class="top-right">{status_badge(result)}<span class="toolbar-btn">Publish</span></div></div>',
+    f'<div class="topbar"><div class="top-left"><span class="brand">❄ ColdCircuit CAD Studio</span><span class="filetab">{plate.name}.json</span><span class="toolbar-btn">Three.js</span><span class="toolbar-btn">OrbitControls</span><span class="toolbar-btn">Export STEP</span></div><div class="top-right">{status_badge(result)}<span class="toolbar-btn">Publish</span></div></div>',
     unsafe_allow_html=True,
 )
 
 with center:
-    st.markdown('<div class="panel"><div class="panel-title">MAIN DASHBOARD / DRAGGABLE 3D VIEWPORT <span class="note">drag rotate · wheel zoom · shift pan</span></div><div class="panel-body">', unsafe_allow_html=True)
+    st.markdown('<div class="panel"><div class="panel-title">MAIN DASHBOARD / THREE.JS DRAGGABLE 3D VIEWPORT <span class="note">left drag orbit · wheel zoom · right drag pan</span></div><div class="panel-body">', unsafe_allow_html=True)
     m1, m2, m3, m4 = st.columns(4)
     for col, label, value in [
         (m1, "TDP", f"{result.total_power_w:.0f} W"),
@@ -239,17 +162,32 @@ with center:
         (m4, "Regime", result.flow_regime),
     ]:
         col.markdown(f'<div class="metric-card"><div class="metric-label">{label}</div><div class="metric-value">{value}</div></div>', unsafe_allow_html=True)
-
     t1, t2, t3 = st.columns(3)
     t1.markdown('<div class="target-card"><b>Thermal Target</b><span>Keep accelerator source below 75°C while preserving coolant ΔT margin.</span></div>', unsafe_allow_html=True)
     t2.markdown('<div class="target-card"><b>Hydraulic Target</b><span>Keep pressure drop below 1.2 bar for pump compatibility.</span></div>', unsafe_allow_html=True)
     t3.markdown('<div class="target-card"><b>Manufacturing Target</b><span>Maintain roof/web thickness and avoid fragile microfeatures.</span></div>', unsafe_allow_html=True)
-
-    show_streamlines = st.checkbox("Show coolant streamlines", value=True)
-    show_heat = st.checkbox("Show heat source / thermal halo", value=True)
-    show_exploded = st.checkbox("Exploded layer view", value=False)
-    fig = build_cad_3d(plate, st.session_state.view_mode, show_streamlines, show_heat, show_exploded)
-    st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True, "displaylogo": False, "modeBarButtonsToAdd": ["drawline", "eraseshape"]})
+    c1, c2, c3 = st.columns(3)
+    show_streamlines = c1.checkbox("Show coolant streamlines", value=True)
+    show_heat = c2.checkbox("Show heat source / thermal halo", value=True)
+    show_exploded = c3.checkbox("Exploded layer view", value=False)
+    st.markdown('<div class="viewer-note">This center viewport is rendered by Three.js WebGL with OrbitControls. It is not a static SVG or Plotly fallback.</div>', unsafe_allow_html=True)
+    render_three_coldplate(
+        plate_name=plate.name,
+        width_mm=plate.base_size_mm[0],
+        depth_mm=plate.base_size_mm[1],
+        thickness_mm=plate.thickness_mm,
+        channel_count=getattr(plate.primary_channel(), "channel_count", 14),
+        channel_width_mm=plate.primary_channel().width_mm,
+        channel_depth_mm=plate.primary_channel().depth_mm,
+        tdp_w=result.total_power_w,
+        max_temp_c=result.estimated_max_source_temperature_c,
+        pressure_drop_bar=result.pressure_drop_bar,
+        view_mode=st.session_state.view_mode,
+        show_streamlines=show_streamlines,
+        show_heat=show_heat,
+        show_exploded=show_exploded,
+        height=650,
+    )
     opt = st.session_state.get("opt_result")
     if opt:
         st.markdown('<div class="panel-title">OPTIMIZATION RESULT</div>', unsafe_allow_html=True)
@@ -260,8 +198,8 @@ with center:
 
 with right:
     st.markdown('<div class="panel"><div class="panel-title">VIEW / ENGINEERING PANEL</div><div class="panel-body">', unsafe_allow_html=True)
-    st.radio("Camera", list(VIEW_CAMERAS.keys()), key="view_mode", horizontal=True)
-    st.markdown('<div class="note">Camera presets update the center viewport. Direct drag still works for orbit, zoom, and inspection.</div>', unsafe_allow_html=True)
+    st.radio("Camera", VIEW_MODES, key="view_mode", horizontal=True)
+    st.markdown('<div class="note">Camera presets update the Three.js viewport. You can still drag directly in the center to orbit, zoom, and pan.</div>', unsafe_allow_html=True)
     st.divider()
     st.markdown('<div class="panel-title">ARCHITECTURE EXPLANATION</div>', unsafe_allow_html=True)
     st.markdown(f'<span class="pill">{structure_family}</span><span class="orange-pill">{optimization_method}</span>', unsafe_allow_html=True)
