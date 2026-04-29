@@ -7,6 +7,8 @@ from .io import load_plate_json, save_schema
 from .report import render_markdown_report
 from .optimization import optimize_grid
 from .backends.openfoam import write_openfoam_case_placeholder
+from .design_rules import all_rules_grouped
+from .tdp1500 import make_tdp1500_reference_design, make_tdp1500_3d_stack, tdp1500_guidance
 
 app = typer.Typer(help="ColdCircuit liquid cold plate design CLI")
 
@@ -61,6 +63,27 @@ def openfoam(json_path: Path, case_dir: Path = typer.Option(Path("openfoam_case"
     plate = load_plate_json(json_path)
     path = write_openfoam_case_placeholder(plate, case_dir)
     print(f"[green]OpenFOAM scaffold written to {path}[/green]")
+
+
+@app.command("rules")
+def structure_rules(out: Path | None = typer.Option(None, help="Optional JSON output path")):
+    grouped = all_rules_grouped()
+    if out:
+        out.write_text(json.dumps(grouped, indent=2), encoding="utf-8")
+        print(f"[green]Structure rules written to {out}[/green]")
+    else:
+        print(json.dumps(grouped, indent=2))
+
+
+@app.command("tdp1500")
+def tdp1500_reference(out: Path = typer.Option(Path("tdp1500_reference.json")), stack_out: Path = typer.Option(Path("tdp1500_3d_stack.json"))):
+    plate = make_tdp1500_reference_design()
+    stack = make_tdp1500_3d_stack()
+    out.write_text(plate.model_dump_json(indent=2), encoding="utf-8")
+    stack_out.write_text(stack.model_dump_json(indent=2), encoding="utf-8")
+    print(f"[green]1500W reference design written to {out}[/green]")
+    print(f"[green]1500W 3D stack written to {stack_out}[/green]")
+    print(tdp1500_guidance().model_dump_json(indent=2))
 
 
 if __name__ == "__main__":
